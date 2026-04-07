@@ -1,0 +1,28 @@
+# ---------------------------------------------------------------
+# Install tip: always use --prefer-binary to avoid source builds
+#   pip install -r requirements.txt --prefer-binary
+# ---------------------------------------------------------------
+
+# Core runtime
+fastapi==0.115.6
+uvicorn[standard]==0.32.1
+pydantic==2.10.3
+
+# Data processing
+# numpy 2.x has pre-built wheels for Python 3.10-3.13.
+# numpy 1.x has no Python 3.13 wheel and requires GCC >= 8.4 to compile.
+numpy>=2.0.0
+pandas>=2.2.0
+
+# OpenAI SDK (baseline agent)
+openai>=1.57.0
+
+# YAML parsing (for openenv.yaml loading)
+pyyaml==6.0.2
+
+# HTTP client (for integration tests / HuggingFace)
+httpx==0.28.1
+
+# Dev / testing extras (not required for production container)
+pytest==8.3.4
+pytest-asyncio==0.24.0
