@@ -41,15 +41,21 @@ def main():
     try:
         env = DataCleaningEnv(seed=42)
         obs = env.reset(task_id)
+        print(f"[START] task={task_id}", flush=True)
         
         # Run for up to 10 steps or until done
         for _ in range(10):
             action = get_action(obs)
             obs, reward, done, info = env.step(action)
+            
+            print(f"[STEP] step={obs.step_number} reward={reward.value}", flush=True)
+            
             if done:
                 break
         
-        # Output JSON result for the grader
+        # Output structured final block and JSON summary
+        print(f"[END] task={task_id} score={info.get('grade', 0.0)} steps={obs.step_number}", flush=True)
+        
         result = {
             "task_id": task_id,
             "steps_taken": obs.step_number,
@@ -57,7 +63,7 @@ def main():
             "grade": info.get("grade", 0.0),
             "status": "completed"
         }
-        print(json.dumps(result, indent=2))
+        print(json.dumps(result, indent=2), flush=True)
         
     except Exception as e:
         print(json.dumps({"status": "error", "message": str(e)}))
