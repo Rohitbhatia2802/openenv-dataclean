@@ -144,17 +144,18 @@ async def health() -> HealthResponse:
 
 
 @app.post("/reset", response_model=Observation, tags=["OpenEnv API"])
-async def reset(body: ResetRequest) -> Observation:
+async def reset(body: ResetRequest | None = None) -> Observation:
     """
     Reset the environment and begin a new episode.
 
-    - **task_id**: Identifier of the task to run.
+    - **task_id**: Identifier of the task to run. (Defaults to 'fix_missing_price' if body is missing)
 
     Returns the initial observation of the fresh dataset.
     """
+    task_id = body.task_id if body else "fix_missing_price"
     try:
-        obs = _env.reset(body.task_id)
-        logger.info("Episode reset: task_id=%s", body.task_id)
+        obs = _env.reset(task_id)
+        logger.info("Episode reset: task_id=%s", task_id)
         return obs
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
