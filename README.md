@@ -1,3 +1,13 @@
+---
+title: OpenEnv Data Clean
+emoji: 🧹
+colorFrom: blue
+colorTo: green
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # OpenEnv: Data Cleaning & Validation Environment
 
 [![OpenEnv Compliant](https://img.shields.io/badge/OpenEnv-Compliant-brightgreen)](https://openenv.ai)
