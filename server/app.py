@@ -218,13 +218,18 @@ async def state() -> State:
 # Entrypoint
 # ---------------------------------------------------------------------------
 
-if __name__ == "__main__":
+def main():
+    """Run the FastAPI server."""
     port = int(os.getenv("PORT", "7860"))
     uvicorn.run(
-        "server:app",
+        "server.app:app",
         host="0.0.0.0",
         port=port,
         workers=1,
         log_level="info",
         reload=False,
     )
+
+
+if __name__ == "__main__":
+    main()
