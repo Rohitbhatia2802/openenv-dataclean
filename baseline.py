@@ -328,18 +328,25 @@ def main() -> None:
         logger.info("Running in DEMO mode (no API key required).")
         client = None
     else:
-        api_key = os.getenv("OPENAI_API_KEY")
+        # Check for hackathon proxy variables first
+        api_key = os.getenv("API_KEY") or os.getenv("OPENAI_API_KEY")
+        base_url = os.getenv("API_BASE_URL")
+
         if not api_key:
             logger.error(
-                "OPENAI_API_KEY environment variable not set.\n"
+                "No API key found. Set API_KEY or OPENAI_API_KEY environmental variables.\n"
                 "  PowerShell : $env:OPENAI_API_KEY = 'sk-...'\n"
-                "  CMD        : set OPENAI_API_KEY=sk-...\n"
-                "  Bash/Zsh   : export OPENAI_API_KEY=sk-...\n"
                 "\nOr run without an API key using the demo agent:\n"
                 "  python baseline.py --demo"
             )
             sys.exit(1)
-        client = OpenAI(api_key=api_key)
+        
+        client_kwargs = {"api_key": api_key}
+        if base_url:
+            logger.info("Using LLM proxy: %s", base_url)
+            client_kwargs["base_url"] = base_url
+            
+        client = OpenAI(**client_kwargs)
 
     env = DataCleaningEnv(seed=42, verbose=False)
 
