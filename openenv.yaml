@@ -1,9 +1,7 @@
 name: data-cleaning-env
 version: "1.0.0"
-description: >
-  A production-grade OpenEnv environment simulating real-world enterprise
-  data cleaning and validation pipelines.
-author: "OpenEnv Hackathon Submission"
+description: Data cleaning OpenEnv
+author: "Rohit"
 license: MIT
 
 container:
@@ -11,68 +9,36 @@ container:
   health_check: "/health"
 
 endpoints:
-  reset:     "/reset"
-  step:      "/step"
-  state:     "/state"
-  health:    "/health"
+  reset: "/reset"
+  step: "/step"
+  state: "/state"
+  health: "/health"
 
 extra_endpoints:
-  tasks:    "/tasks"
-  grader:   "/grader"
-  baseline: "/baseline"
+  tasks: "/tasks"
+  grader: "/grader"
 
 tasks:
   - id: fix_missing_price
-    name: "Fix Missing Price Values (Easy)"
+    name: Fix Missing Price Values
     difficulty: easy
-    description: >
-      A retail transaction CSV has ~20% of its 'price' column missing or set to
-      sentinel value -1.
-    max_steps: 20
-    pass_threshold: 0.70
-    excellent_threshold: 0.95
     grader: true
-    grader_endpoint: /grader/fix_missing_price
 
   - id: normalize_customer_pipeline
-    name: "Normalize Customer Data Pipeline (Medium)"
+    name: Normalize Customer Data
     difficulty: medium
-    description: >
-      A customer CRM export has inconsistent phone formats, mixed-case emails,
-      duplicate rows, and out-of-range ages.
-    max_steps: 35
-    pass_threshold: 0.60
-    excellent_threshold: 0.90
     grader: true
-    grader_endpoint: /grader/normalize_customer_pipeline
 
   - id: validate_medical_records
-    name: "Validate Medical Records (Hard)"
+    name: Validate Medical Records
     difficulty: hard
-    description: >
-      A hospital EMR export contains date-of-birth / admission-date ordering
-      violations, ICD-10 code format errors, and negative dosage values.
-    max_steps: 50
-    pass_threshold: 0.55
-    excellent_threshold: 0.85
     grader: true
-    grader_endpoint: /grader/validate_medical_records
 
 action_space:
   type: structured
-  model: Action
-  action_types: [impute_missing, replace_sentinel, deduplicate, standardize_phone, lowercase_email, clamp_range, fix_date_order, fix_icd10, fix_negative_dosage, fill_mandatory, drop_column, validate, export]
 
 observation_space:
   type: structured
-  model: Observation
-  reward_included: true
-  done_included: true
 
 reward:
   type: continuous
-  range: [0.0, 1.0]
-  shape: step-wise
-  partial_credit: true
-
-python_requires: ">=3.10"
