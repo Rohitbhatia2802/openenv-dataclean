@@ -232,7 +232,7 @@ class State(BaseModel):
 class TaskConfig(BaseModel):
     """Static task configuration, parsed from openenv.yaml."""
     id: str
-    display_name: str
+    name: str
     difficulty: Difficulty
     description: str
     max_steps: int

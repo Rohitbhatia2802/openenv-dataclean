@@ -1,27 +1,21 @@
+spec_version: 1
 name: data-cleaning-env
 version: "1.0.0"
 description: >
   A production-grade OpenEnv environment simulating real-world enterprise
-  data cleaning and validation pipelines. Agents interact with in-memory
-  pandas DataFrames via structured JSON actions, receiving dense step-wise
-  reward signals across three difficulty tiers.
+  data cleaning and validation pipelines. 
 author: "OpenEnv Hackathon Submission"
 license: MIT
-tags:
-  - data-cleaning
-  - tabular
-  - pandas
-  - enterprise
-  - pipeline
 
 entrypoints:
   python: "src.env:DataCleaningEnv"
-  server: "server:app"
+  server: "server.app:main"
   baseline: "baseline:main"
 
 environment:
   python_version: "3.10"
   dependencies: requirements.txt
+  runtime: fastapi
 
 api:
   reset: "POST /reset"
@@ -31,70 +25,40 @@ api:
 
 tasks:
   - id: fix_missing_price
-    display_name: "Fix Missing Price Values (Easy)"
+    name: "Fix Missing Price Values (Easy)"
     difficulty: easy
     description: >
       A retail transaction CSV has ~20% of its 'price' column missing or set to
-      sentinel value -1. The agent must impute nulls with the column median and
-      replace -1 sentinels with the same median, then validate that no nulls or
-      invalid prices remain. Single-column operation.
+      sentinel value -1.
     dataset: retail_transactions
     max_steps: 20
     success_threshold: 0.95
     grader: "src.graders:EasyGrader"
     reward_shaping: dense
-    observation_fields:
-      - missing_count
-      - sentinel_count
-      - column_stats
-      - sample_rows
-      - step_number
 
   - id: normalize_customer_pipeline
-    display_name: "Normalize Customer Data Pipeline (Medium)"
+    name: "Normalize Customer Data Pipeline (Medium)"
     difficulty: medium
     description: >
       A customer CRM export has inconsistent phone formats, mixed-case emails,
-      duplicate rows, and out-of-range ages. The agent must deduplicate records,
-      standardize phone numbers to E.164 format, lowercase emails, clamp ages
-      to [18, 100], and validate the full schema. Multi-column pipeline.
+      duplicate rows, and out-of-range ages.
     dataset: customer_crm
     max_steps: 35
     success_threshold: 0.90
     grader: "src.graders:MediumGrader"
     reward_shaping: dense
-    observation_fields:
-      - duplicate_count
-      - phone_format_errors
-      - email_case_errors
-      - age_range_violations
-      - column_stats
-      - sample_rows
-      - step_number
 
   - id: validate_medical_records
-    display_name: "Validate Medical Records (Hard)"
+    name: "Validate Medical Records (Hard)"
     difficulty: hard
     description: >
       A hospital EMR export contains date-of-birth / admission-date ordering
-      violations, ICD-10 code format errors, negative dosage values, blank
-      mandatory fields, and cross-column constraint violations (e.g., discharge
-      before admission). The agent must satisfy all constraints with minimal
-      destructive edits under a tight step budget.
+      violations, ICD-10 code format errors, and negative dosage values.
     dataset: medical_records
     max_steps: 50
     success_threshold: 0.85
     grader: "src.graders:HardGrader"
     reward_shaping: dense
-    observation_fields:
-      - date_order_violations
-      - icd10_format_errors
-      - negative_dosage_count
-      - blank_mandatory_count
-      - cross_column_violations
-      - column_stats
-      - sample_rows
-      - step_number
 
 rewards:
   floor: 0.0
@@ -102,16 +66,8 @@ rewards:
   step_penalty: -0.01
   invalid_action_penalty: -0.05
   destructive_action_penalty: -0.10
-  partial_credit: true
 
 validation:
   schema_version: "1.0"
-  required_methods:
-    - reset
-    - step
-    - state
-  required_models:
-    - Observation
-    - Action
-    - Reward
-    - State
+  required_methods: [reset, step, state]
+  required_models: [Observation, Action, Reward, State]

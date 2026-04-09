@@ -58,7 +58,7 @@ _TASK_REGISTRY: Dict[str, Dict[str, Any]] = {
     "fix_missing_price": {
         "config": TaskConfig(
             id="fix_missing_price",
-            display_name="Fix Missing Price Values (Easy)",
+            name="Fix Missing Price Values (Easy)",
             difficulty=Difficulty.EASY,
             description=(
                 "Impute missing and sentinel price values in a retail "
@@ -73,7 +73,7 @@ _TASK_REGISTRY: Dict[str, Dict[str, Any]] = {
     "normalize_customer_pipeline": {
         "config": TaskConfig(
             id="normalize_customer_pipeline",
-            display_name="Normalize Customer Data Pipeline (Medium)",
+            name="Normalize Customer Data Pipeline (Medium)",
             difficulty=Difficulty.MEDIUM,
             description=(
                 "Deduplicate, standardize phone/email, and clamp age values "
@@ -88,7 +88,7 @@ _TASK_REGISTRY: Dict[str, Dict[str, Any]] = {
     "validate_medical_records": {
         "config": TaskConfig(
             id="validate_medical_records",
-            display_name="Validate Medical Records (Hard)",
+            name="Validate Medical Records (Hard)",
             difficulty=Difficulty.HARD,
             description=(
                 "Fix date-ordering, ICD-10 codes, negative dosages, and "
