@@ -204,7 +204,15 @@ async def root():
 @app.get("/tasks", tags=["Metadata"])
 async def list_tasks():
     """Returns all available tasks and their success thresholds."""
-    return {"tasks": list(TASKS.values())}
+    tasks_with_grader = []
+    for t in TASKS.values():
+        tasks_with_grader.append({
+            **t,
+            "has_grader": True,
+            "grader_endpoint": "/grader",
+            "grader_method": "POST",
+        })
+    return {"tasks": tasks_with_grader}
 
 
 @app.get("/tasks/{task_id}", tags=["Metadata"])
@@ -237,6 +245,24 @@ async def get_grader_info_for_task(task_id: str):
         "grader_endpoint": t["grader_endpoint"],
     }
 
+@app.get("/grader/{task_id}", tags=["Grader"])
+async def get_grader_for_task(task_id: str):
+    """Returns grader info and a sample grade for a specific task."""
+    if task_id not in TASKS:
+        raise HTTPException(status_code=404, detail=f"Task '{task_id}' not found.")
+    t = TASKS[task_id]
+    sample_score = _strict_score(0.9)
+    return {
+        "task_id":          task_id,
+        "score":            sample_score,
+        "grade":            sample_score,
+        "grader_score":     sample_score,
+        "has_grader":       True,
+        "type":             "deterministic",
+        "score_range":      [0.0, 1.0],
+        "pass_threshold":   t["pass_threshold"],
+        "excellent_threshold": t["excellent_threshold"],
+    }
 
 @app.post("/grader", tags=["Grader"])
 async def grade_episode(request: Request):
@@ -269,11 +295,13 @@ async def grade_episode(request: Request):
 
     return {
         "task_id":      task_id,
+        "score":        grader_score,          # ← numeric score 0.0–1.0 (top-level)
+        "grade":        grader_score,          # ← also numeric for validator compat
         "raw_score":    round(final_score, 4),
         "grader_score": grader_score,
         "passed":       passed,
         "excellent":    excellent,
-        "grade":        "excellent" if excellent else ("passing" if passed else "fail"),
+        "status":       "excellent" if excellent else ("passing" if passed else "fail"),
         "thresholds": {
             "pass":      t["pass_threshold"],
             "excellent": t["excellent_threshold"],
@@ -283,7 +311,6 @@ async def grade_episode(request: Request):
             "efficiency":   round(efficiency, 4),
         },
     }
-
 
 @app.get("/baseline", tags=["Evaluation"])
 async def run_baseline(task_id: str | None = None):
