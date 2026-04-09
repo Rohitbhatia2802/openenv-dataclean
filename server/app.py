@@ -97,8 +97,8 @@ async def list_tasks():
             {
                 **t,
                 "has_grader": True,
-                "grader_endpoint": f"/grader/{t['id']}",  
-                "grader_method": "GET"  
+                "grader_endpoint": f"/grader/{t['id']}",
+                "grader_method": "GET"
             }
             for t in TASKS.values()
         ]
@@ -110,7 +110,7 @@ async def get_grader_for_task(task_id: str):
         raise HTTPException(status_code=404)
 
     t = TASKS[task_id]
-    sample = _strict_score(0.9)
+    sample = 0.9
 
     return {
         "task_id": task_id,
@@ -142,7 +142,7 @@ async def grade_episode(request: Request):
     return {
         "task_id": task_id,
         "score": score,
-        "grade": score,  # IMPORTANT numeric
+        "grade": score
     }
 
 @app.post("/reset")
