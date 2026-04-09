@@ -3,25 +3,20 @@ name: data-cleaning-env
 version: "1.0.0"
 description: >
   A production-grade OpenEnv environment simulating real-world enterprise
-  data cleaning and validation pipelines. 
+  data cleaning and validation pipelines.
 author: "OpenEnv Hackathon Submission"
 license: MIT
 
-entrypoints:
+endpoints:
   python: "src.env:DataCleaningEnv"
   server: "server.app:main"
   baseline: "baseline:main"
+  grader: "/grader"
 
 environment:
   python_version: "3.10"
   dependencies: requirements.txt
   runtime: fastapi
-
-api:
-  reset: "POST /reset"
-  step:  "POST /step"
-  state: "GET  /state"
-  health: "GET  /health"
 
 tasks:
   - id: fix_missing_price
@@ -34,6 +29,10 @@ tasks:
     max_steps: 20
     success_threshold: 0.95
     grader: "src.graders:EasyGrader"
+    score_range: [0.0, 1.0]
+    wind: "None"
+    assets: "Price column integrity"
+    initial_fire: "None"
     reward_shaping: dense
 
   - id: normalize_customer_pipeline
@@ -46,6 +45,10 @@ tasks:
     max_steps: 35
     success_threshold: 0.90
     grader: "src.graders:MediumGrader"
+    score_range: [0.0, 1.0]
+    wind: "None"
+    assets: "Customer CRM consistency"
+    initial_fire: "None"
     reward_shaping: dense
 
   - id: validate_medical_records
@@ -58,6 +61,10 @@ tasks:
     max_steps: 50
     success_threshold: 0.85
     grader: "src.graders:HardGrader"
+    score_range: [0.0, 1.0]
+    wind: "None"
+    assets: "Medical record safety"
+    initial_fire: "None"
     reward_shaping: dense
 
 rewards:

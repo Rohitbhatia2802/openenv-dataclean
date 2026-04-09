@@ -143,6 +143,24 @@ async def health() -> HealthResponse:
     )
 
 
+@app.get("/grader", tags=["Infrastructure"])
+async def grader() -> Dict[str, Any]:
+    """
+    Returns metadata about the environment's deterministic graders.
+    Required for Phase 2 validation deep-scan.
+    """
+    return {
+        "type": "deterministic",
+        "graders": {
+            "easy": "EasyGrader (weighted null/sentinel/sign checks)",
+            "medium": "MediumGrader (reformatted phone/email, deduplication)",
+            "hard": "HardGrader (date-order, ICD-10, dosage validation)"
+        },
+        "score_range": [0.0, 1.0],
+        "thresholds": {"easy": 0.95, "medium": 0.90, "hard": 0.85}
+    }
+
+
 @app.post("/reset", response_model=Observation, tags=["OpenEnv API"])
 async def reset(body: ResetRequest | None = None) -> Observation:
     """
