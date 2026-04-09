@@ -157,8 +157,21 @@ async def grade_episode(request: Request):
     }
 
 @app.post("/reset")
-async def reset(body: ResetRequest):
-    return _env.reset(body.task_id)
+async def reset(body: ResetRequest | None = None):
+    try:
+        # Default task if no body
+        task_id = body.task_id if body and body.task_id else "fix_missing_price"
+
+        # If invalid task_id → fallback safely
+        if task_id not in TASKS:
+            task_id = "fix_missing_price"
+
+        return _env.reset(task_id)
+
+    except Exception as e:
+        return {
+            "error": str(e)
+        }
 
 @app.post("/step")
 async def step(body: StepRequest):
