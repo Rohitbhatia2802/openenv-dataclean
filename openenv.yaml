@@ -16,23 +16,25 @@ endpoints:
 
 extra_endpoints:
   tasks: "/tasks"
-  grader: "/grader"
 
 tasks:
   - id: fix_missing_price
     name: Fix Missing Price Values
     difficulty: easy
     grader: true
+    grader_endpoint: "/grader/fix_missing_price"
 
   - id: normalize_customer_pipeline
     name: Normalize Customer Data
     difficulty: medium
     grader: true
+    grader_endpoint: "/grader/normalize_customer_pipeline"
 
   - id: validate_medical_records
     name: Validate Medical Records
     difficulty: hard
     grader: true
+    grader_endpoint: "/grader/validate_medical_records"
 
 action_space:
   type: structured
