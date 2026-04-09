@@ -31,6 +31,8 @@ tasks:
     max_steps: 20
     pass_threshold: 0.70
     excellent_threshold: 0.95
+    grader: true
+    grader_endpoint: /grader/fix_missing_price
 
   - id: normalize_customer_pipeline
     name: "Normalize Customer Data Pipeline (Medium)"
@@ -41,6 +43,8 @@ tasks:
     max_steps: 35
     pass_threshold: 0.60
     excellent_threshold: 0.90
+    grader: true
+    grader_endpoint: /grader/normalize_customer_pipeline
 
   - id: validate_medical_records
     name: "Validate Medical Records (Hard)"
@@ -51,6 +55,8 @@ tasks:
     max_steps: 50
     pass_threshold: 0.55
     excellent_threshold: 0.85
+    grader: true
+    grader_endpoint: /grader/validate_medical_records
 
 action_space:
   type: structured

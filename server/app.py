@@ -44,7 +44,9 @@ TASKS = {
         "max_steps": 20,
         "pass_threshold": 0.70,
         "excellent_threshold": 0.95,
-        "description": "Impute missing and sentinel price values."
+        "description": "Impute missing and sentinel price values.",
+        "grader" : True,         
+        "grader_endpoint": "/grader/fix_missing_price",
     },
     "normalize_customer_pipeline": {
         "id": "normalize_customer_pipeline",
@@ -53,7 +55,9 @@ TASKS = {
         "max_steps": 35,
         "pass_threshold": 0.60,
         "excellent_threshold": 0.90,
-        "description": "Deduplicate, standardize phone/email, and clamp age values."
+        "description": "Deduplicate, standardize phone/email, and clamp age values.",
+        "grader": True,
+        "grader_endpoint": "/grader/normalize_customer_pipeline",
     },
     "validate_medical_records": {
         "id": "validate_medical_records",
@@ -62,7 +66,9 @@ TASKS = {
         "max_steps": 50,
         "pass_threshold": 0.55,
         "excellent_threshold": 0.85,
-        "description": "Fix date-ordering, ICD-10 codes, and dosage values."
+        "description": "Fix date-ordering, ICD-10 codes, and dosage values.",
+        "grader": True,
+        "grader_endpoint": "/grader/validate_medical_records",
     }
 }
 
@@ -209,6 +215,26 @@ async def get_task(task_id: str):
     return {
         **TASKS[task_id],
         "action_schema": Action.model_json_schema(),
+    }
+
+
+@app.get("/grader/{task_id}", tags=["Grader"])
+async def get_grader_info_for_task(task_id: str):
+    """
+    Returns grader metadata for a specific task.
+    Required by Phase 2 validator to confirm graders exist per task.
+    """
+    if task_id not in TASKS:
+        raise HTTPException(status_code=404, detail=f"Task '{task_id}' not found.")
+    t = TASKS[task_id]
+    return {
+        "task_id": task_id,
+        "grader": True,
+        "type": "deterministic",
+        "score_range": [0.0, 1.0],
+        "pass_threshold": t["pass_threshold"],
+        "excellent_threshold": t["excellent_threshold"],
+        "grader_endpoint": t["grader_endpoint"],
     }
 
 
