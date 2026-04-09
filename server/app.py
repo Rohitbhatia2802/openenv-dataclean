@@ -82,6 +82,17 @@ class StepRequest(BaseModel):
 
 # ---------------- ENDPOINTS ----------------
 
+@app.get("/")
+async def root():
+    return {
+        "message": "OpenEnv Data Cleaning Environment is running",
+        "endpoints": {
+            "health": "/health",
+            "tasks": "/tasks",
+            "docs": "/docs"
+        }
+    }
+
 @app.get("/health")
 async def health():
     return {
