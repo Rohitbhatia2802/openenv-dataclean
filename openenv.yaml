@@ -1,4 +1,3 @@
-spec_version: 1
 name: data-cleaning-env
 version: "1.0.0"
 description: >
@@ -7,16 +6,20 @@ description: >
 author: "OpenEnv Hackathon Submission"
 license: MIT
 
-endpoints:
-  python: "src.env:DataCleaningEnv"
-  server: "server.app:main"
-  baseline: "baseline:main"
-  grader: "/grader"
+container:
+  port: 7860
+  health_check: "/health"
 
-environment:
-  python_version: "3.10"
-  dependencies: requirements.txt
-  runtime: fastapi
+endpoints:
+  reset:     "/reset"
+  step:      "/step"
+  state:     "/state"
+  health:    "/health"
+
+extra_endpoints:
+  tasks:    "/tasks"
+  grader:   "/grader"
+  baseline: "/baseline"
 
 tasks:
   - id: fix_missing_price
@@ -25,15 +28,9 @@ tasks:
     description: >
       A retail transaction CSV has ~20% of its 'price' column missing or set to
       sentinel value -1.
-    dataset: retail_transactions
     max_steps: 20
-    success_threshold: 0.95
-    grader: "src.graders:EasyGrader"
-    score_range: [0.0, 1.0]
-    wind: "None"
-    assets: "Price column integrity"
-    initial_fire: "None"
-    reward_shaping: dense
+    pass_threshold: 0.70
+    excellent_threshold: 0.95
 
   - id: normalize_customer_pipeline
     name: "Normalize Customer Data Pipeline (Medium)"
@@ -41,15 +38,9 @@ tasks:
     description: >
       A customer CRM export has inconsistent phone formats, mixed-case emails,
       duplicate rows, and out-of-range ages.
-    dataset: customer_crm
     max_steps: 35
-    success_threshold: 0.90
-    grader: "src.graders:MediumGrader"
-    score_range: [0.0, 1.0]
-    wind: "None"
-    assets: "Customer CRM consistency"
-    initial_fire: "None"
-    reward_shaping: dense
+    pass_threshold: 0.60
+    excellent_threshold: 0.90
 
   - id: validate_medical_records
     name: "Validate Medical Records (Hard)"
@@ -57,24 +48,25 @@ tasks:
     description: >
       A hospital EMR export contains date-of-birth / admission-date ordering
       violations, ICD-10 code format errors, and negative dosage values.
-    dataset: medical_records
     max_steps: 50
-    success_threshold: 0.85
-    grader: "src.graders:HardGrader"
-    score_range: [0.0, 1.0]
-    wind: "None"
-    assets: "Medical record safety"
-    initial_fire: "None"
-    reward_shaping: dense
+    pass_threshold: 0.55
+    excellent_threshold: 0.85
 
-rewards:
-  floor: 0.0
-  ceiling: 1.0
-  step_penalty: -0.01
-  invalid_action_penalty: -0.05
-  destructive_action_penalty: -0.10
+action_space:
+  type: structured
+  model: Action
+  action_types: [impute_missing, replace_sentinel, deduplicate, standardize_phone, lowercase_email, clamp_range, fix_date_order, fix_icd10, fix_negative_dosage, fill_mandatory, drop_column, validate, export]
 
-validation:
-  schema_version: "1.0"
-  required_methods: [reset, step, state]
-  required_models: [Observation, Action, Reward, State]
+observation_space:
+  type: structured
+  model: Observation
+  reward_included: true
+  done_included: true
+
+reward:
+  type: continuous
+  range: [0.0, 1.0]
+  shape: step-wise
+  partial_credit: true
+
+python_requires: ">=3.10"

@@ -236,7 +236,8 @@ class TaskConfig(BaseModel):
     difficulty: Difficulty
     description: str
     max_steps: int
-    success_threshold: float = Field(..., ge=0.0, le=1.0)
+    pass_threshold: float = Field(..., ge=0.0, le=1.0)
+    excellent_threshold: float = Field(..., ge=0.0, le=1.0)
     reward_shaping: str = "dense"
     score_range: List[float] = Field(default_factory=lambda: [0.0, 1.0])
     grader: str = ""

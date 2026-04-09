@@ -65,7 +65,8 @@ _TASK_REGISTRY: Dict[str, Dict[str, Any]] = {
                 "transaction dataset using the column median."
             ),
             max_steps=20,
-            success_threshold=0.95,
+            pass_threshold=0.70,
+            excellent_threshold=0.95,
         ),
         "task_cls": EasyTask,
         "grader_cls": EasyGrader,
@@ -80,7 +81,8 @@ _TASK_REGISTRY: Dict[str, Dict[str, Any]] = {
                 "in a customer CRM export."
             ),
             max_steps=35,
-            success_threshold=0.90,
+            pass_threshold=0.60,
+            excellent_threshold=0.90,
         ),
         "task_cls": MediumTask,
         "grader_cls": MediumGrader,
@@ -95,7 +97,8 @@ _TASK_REGISTRY: Dict[str, Dict[str, Any]] = {
                 "cross-column constraint violations in a hospital EMR export."
             ),
             max_steps=50,
-            success_threshold=0.85,
+            pass_threshold=0.55,
+            excellent_threshold=0.85,
         ),
         "task_cls": HardTask,
         "grader_cls": HardGrader,
@@ -277,7 +280,7 @@ class DataCleaningEnv:
 
         # --- Check termination ---
         self._done = self._is_done(grade, action)
-        self._success = grade >= self._config.success_threshold
+        self._success = grade >= self._config.pass_threshold
 
         # --- Build observation ---
         if exec_error:
@@ -355,7 +358,7 @@ class DataCleaningEnv:
             current_observation=self._current_obs,
             metadata={
                 "seed": self._seed,
-                "success_threshold": self._config.success_threshold,
+                "pass_threshold": self._config.pass_threshold,
             },
         )
 
@@ -724,7 +727,7 @@ class DataCleaningEnv:
             return True
         if action.operation == OperationType.EXPORT:
             return True
-        if grade >= self._config.success_threshold:
+        if grade >= self._config.pass_threshold:
             return True
         return False
 

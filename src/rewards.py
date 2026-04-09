@@ -15,7 +15,7 @@ progress_reward     : +0.0 – +0.30  based on defect reduction fraction
 step_penalty        : -0.01          living-cost per step (encourages efficiency)
 invalid_penalty     : -0.05          malformed/illegal action submitted
 destructive_penalty : -0.10          drop_column used on required columns
-completion_bonus    : +0.20          awarded once when grade ≥ success_threshold
+completion_bonus    : +0.20          awarded once when grade ≥ pass_threshold
 """
 
 from __future__ import annotations
@@ -48,7 +48,7 @@ class RewardCalculator:
     Parameters
     ----------
     config : TaskConfig
-        Active task configuration (used for success_threshold).
+        Active task configuration (used for pass_threshold).
     """
 
     def __init__(self, config: TaskConfig) -> None:
@@ -117,7 +117,7 @@ class RewardCalculator:
 
         # --- Completion bonus (one-time) ---
         if (
-            grade >= self._config.success_threshold
+            grade >= self._config.pass_threshold
             and not self._completion_bonus_awarded
         ):
             breakdown.completion_bonus = _COMPLETION_BONUS
