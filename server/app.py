@@ -72,8 +72,6 @@ app.add_middleware(
 )
 
 # ---------------- MODELS ----------------
-class ResetRequest(BaseModel):
-    task_id: str
 
 class StepRequest(BaseModel):
     operation: str
@@ -162,16 +160,19 @@ async def reset(body: dict = None):
         # Default task
         task_id = "fix_missing_price"
 
-        # If body provided
-        if body and "task_id" in body:
-            if body["task_id"] in TASKS:
+        # Check if body exists and has valid task_id
+        if body and isinstance(body, dict):
+            if "task_id" in body and body["task_id"] in TASKS:
                 task_id = body["task_id"]
 
+        # Safe call
         return _env.reset(task_id)
 
     except Exception as e:
+        # Never crash — always return response
         return {
-            "error": str(e)
+            "error": str(e),
+            "fallback": "reset handled safely"
         }
 
 @app.post("/step")
