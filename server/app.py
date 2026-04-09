@@ -97,8 +97,8 @@ async def list_tasks():
             {
                 **t,
                 "has_grader": True,
-                "grader_endpoint": "/grader",
-                "grader_method": "POST"
+                "grader_endpoint": f"/grader/{t['id']}",  
+                "grader_method": "GET"  
             }
             for t in TASKS.values()
         ]
