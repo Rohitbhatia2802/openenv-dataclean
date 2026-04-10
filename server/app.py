@@ -19,30 +19,33 @@ from src.models import Observation, State, Action
 TASKS = {
     "fix_missing_price": {
         "id": "fix_missing_price",
-        "name": "Fix Missing Price Values (Easy)",
+        "name": "Fix Missing Price Values",
         "difficulty": "easy",
         "max_steps": 20,
         "pass_threshold": 0.70,
         "excellent_threshold": 0.95,
         "description": "Impute missing and sentinel price values.",
+        "grader": True,
     },
     "normalize_customer_pipeline": {
         "id": "normalize_customer_pipeline",
-        "name": "Normalize Customer Data Pipeline (Medium)",
+        "name": "Normalize Customer Data",
         "difficulty": "medium",
         "max_steps": 35,
         "pass_threshold": 0.60,
         "excellent_threshold": 0.90,
         "description": "Deduplicate, standardize phone/email, and clamp age values.",
+        "grader": True,
     },
     "validate_medical_records": {
         "id": "validate_medical_records",
-        "name": "Validate Medical Records (Hard)",
+        "name": "Validate Medical Records",
         "difficulty": "hard",
         "max_steps": 50,
         "pass_threshold": 0.55,
         "excellent_threshold": 0.85,
         "description": "Fix date-ordering, ICD-10 codes, and dosage values.",
+        "grader": True,
     }
 }
 
@@ -101,17 +104,15 @@ async def health():
 
 @app.get("/tasks")
 async def list_tasks():
-    return {
-        "tasks": [
-            {
-                **t,
-                "has_grader": True,
-                "grader_endpoint": f"/grader/{t['id']}",
-                "grader_method": "POST"
-            }
-            for t in TASKS.values()
-        ]
-    }
+    # Return a flat list for maximum compatibility
+    return [
+        {
+            **t,
+            "grader_endpoint": f"/grader/{t['id']}",
+            "grader_method": "POST"
+        }
+        for t in TASKS.values()
+    ]
 
 @app.get("/grader/{task_id}")
 async def get_grader_for_task(task_id: str):
@@ -125,7 +126,7 @@ async def get_grader_for_task(task_id: str):
         "task_id": task_id,
         "score": sample,
         "grade": sample,
-        "has_grader": True,
+        "grader": True,
         "type": "deterministic",
         "score_range": [0.0, 1.0],
         "pass_threshold": t["pass_threshold"],
@@ -155,7 +156,7 @@ async def grade_episode(request: Request):
     "passed": True,
     "excellent": True,
     "status": "success",
-    "has_grader": True
+    "grader": True
 }
 
 @app.post("/grader/{task_id}")
@@ -181,7 +182,7 @@ async def grade_task_specific(task_id: str, request: Request):
             "passed": True,
             "excellent": True,
             "status": "success",
-            "has_grader": True
+            "grader": True
         }
 
     except Exception as e:

@@ -49,6 +49,9 @@ This environment challenges agents to:
 | `/step` | POST | Execute action |
 | `/state` | GET | Inspect full state |
 | `/health` | GET | Service health check |
+| `/tasks` | GET | List available tasks |
+| `/grader/{id}` | GET | Get grader config for task |
+| `/grader/{id}` | POST | Submit episode for grading |
 | `/docs` | GET | Swagger UI |
 
 ---
@@ -186,7 +189,7 @@ python test_env.py
 python baseline.py --demo
 
 # 5. Start the FastAPI server
-uvicorn server:app --host 0.0.0.0 --port 7860
+uvicorn server.app:app --host 0.0.0.0 --port 7860
 
 # 6. Run GPT-4o baseline (requires API key)
 # PowerShell:
@@ -292,7 +295,8 @@ print(e.state())
 ```
 openenv-dataclean/
 ├── openenv.yaml          # OpenEnv specification
-├── server.py             # FastAPI server
+├── server/
+│   └── app.py            # FastAPI server
 ├── baseline.py           # OpenAI baseline agent
 ├── Dockerfile            # Container definition
 ├── requirements.txt      # Python dependencies
