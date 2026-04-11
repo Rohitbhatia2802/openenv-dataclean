@@ -97,7 +97,8 @@ class EasyGrader(BaseGrader):
             + 0.30 * sentinel_score
             + 0.20 * positive_score
         )
-        return float(np.clip(weighted, 0.0, 1.0))
+        # Use strict score clipping (0, 1)
+        return float(np.clip(weighted, 0.001, 0.999))
 
     def count_defects(self, df: pd.DataFrame) -> int:
         """Sum of null prices, sentinel -1 prices, and non-positive prices."""
@@ -208,7 +209,8 @@ class MediumGrader(BaseGrader):
         age_score = 1.0 - (age_err / age_n)
 
         final = (dup_score + phone_score + email_score + age_score) / 4.0
-        return float(np.clip(final, 0.0, 1.0))
+        # Use strict score clipping (0, 1)
+        return float(np.clip(final, 0.001, 0.999))
 
     def count_defects(self, df: pd.DataFrame) -> int:
         """Total count across all four defect types."""
@@ -324,7 +326,8 @@ class HardGrader(BaseGrader):
         final = (
             date_score + icd_score + neg_score + blank_score + cross_score
         ) / 5.0
-        return float(np.clip(final, 0.0, 1.0))
+        # Use strict score clipping (0, 1)
+        return float(np.clip(final, 0.001, 0.999))
 
     def count_defects(self, df: pd.DataFrame) -> int:
         """Total count across all five defect types."""

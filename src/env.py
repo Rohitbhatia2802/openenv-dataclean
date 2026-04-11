@@ -276,7 +276,7 @@ class DataCleaningEnv:
             exec_error=exec_error,
         )
         reward.cumulative = self._cumulative_reward + reward.value
-        self._cumulative_reward = max(0.0, min(1.0, reward.cumulative))
+        self._cumulative_reward = max(0.001, min(0.999, reward.cumulative))
 
         # --- Check termination ---
         self._done = self._is_done(grade, action)

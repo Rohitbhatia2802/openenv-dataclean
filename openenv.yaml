@@ -21,18 +21,21 @@ tasks:
   - id: fix_missing_price
     name: Fix Missing Price Values
     difficulty: easy
+    description: "Impute missing and sentinel price values in the retail dataset."
     grader: true
     grader_endpoint: "/grader/fix_missing_price"
 
   - id: normalize_customer_pipeline
     name: Normalize Customer Data
     difficulty: medium
+    description: "Deduplicate, standardize phone/email, and clamp age values."
     grader: true
     grader_endpoint: "/grader/normalize_customer_pipeline"
 
   - id: validate_medical_records
     name: Validate Medical Records
     difficulty: hard
+    description: "Fix date-ordering, ICD-10 codes, and dosage values in EMR data."
     grader: true
     grader_endpoint: "/grader/validate_medical_records"
 

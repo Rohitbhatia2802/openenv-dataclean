@@ -120,12 +120,17 @@ async def get_grader_for_task(task_id: str):
         raise HTTPException(status_code=404)
 
     t = TASKS[task_id]
-    sample = 0.9
+    # Evaluate current state if task matches
+    score = 0.0
+    if _env._task_id == task_id and _env._df is not None:
+        score = _strict_score(_env._grader.grade(_env._df))
+    else:
+        score = 0.0 # Or some default
 
     return {
         "task_id": task_id,
-        "score": sample,
-        "grade": sample,
+        "score": score,
+        "grade": score,
         "grader": True,
         "type": "deterministic",
         "score_range": [0.0, 1.0],
@@ -165,28 +170,39 @@ async def grade_task_specific(task_id: str, request: Request):
         if task_id not in TASKS:
             raise HTTPException(status_code=404, detail="Invalid task")
 
-        data = await request.json()
-
-        final_score = float(data.get("grade", 0.5))
-        actions = data.get("actions", [])
+        # In a real scenario, we'd use the current env state
+        # But for the validator, we can also accept a grade if provided
+        try:
+            data = await request.json()
+        except:
+            data = {}
 
         t = TASKS[task_id]
-
-        efficiency = max(0.0, 1.0 - len(actions) / t["max_steps"])
-        score = _strict_score(final_score * 0.85 + efficiency * 0.15)
+        
+        if _env._task_id == task_id and _env._df is not None:
+            # Actual evaluation
+            raw_score = _env._grader.grade(_env._df)
+            actions = _env._episode_history
+            efficiency = max(0.0, 1.0 - len(actions) / t["max_steps"])
+            score = _strict_score(raw_score * 0.85 + efficiency * 0.15)
+        else:
+            # Fallback to provided grade or default
+            final_score = float(data.get("grade", data.get("score", 0.0)))
+            score = _strict_score(final_score)
 
         return {
             "task_id": task_id,
             "score": score,
             "grade": score,
-            "passed": True,
-            "excellent": True,
+            "passed": score >= t["pass_threshold"],
+            "excellent": score >= t["excellent_threshold"],
             "status": "success",
             "grader": True
         }
 
     except Exception as e:
-        return {"error": str(e)}
+        logger.error(f"Grader error: {e}")
+        return JSONResponse(status_code=500, content={"error": str(e)})
 
 @app.post("/reset")
 async def reset(body: dict = None):

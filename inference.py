@@ -1,133 +1,137 @@
-"""
-Inference script for OpenEnv Data Cleaning Environment.
-This script is required by the hackathon validator at the repository root.
-It runs an LLM-based agent using the provided LiteLLM proxy environment variables.
-"""
-
-import sys
-import json
+import asyncio
 import os
+import json
 import textwrap
 import logging
+from typing import List, Optional, Dict, Any
+
+from openai import OpenAI
 from src.env import DataCleaningEnv
 
-# Suppress excessive logging
-logging.basicConfig(level=logging.WARNING)
-logger = logging.getLogger("openenv.inference")
-
-try:
-    from openai import OpenAI
-except ImportError:
-    print("Error: openai package not found. Install with: pip install openai")
-    sys.exit(1)
+# Constants from environment or defaults
+API_KEY = os.getenv("HF_TOKEN") or os.getenv("API_KEY") or "EMPTY"
+API_BASE_URL = os.getenv("API_BASE_URL") or "https://router.huggingface.co/v1"
+MODEL_NAME = os.getenv("MODEL_NAME") or "Qwen/Qwen2.5-72B-Instruct"
+TASK_NAME = os.getenv("MY_ENV_V4_TASK") or os.getenv("TASK_NAME") or "fix_missing_price"
+BENCHMARK = os.getenv("MY_ENV_V4_BENCHMARK") or "openenv-dataclean"
+MAX_STEPS_DEFAULT = 10
+TEMPERATURE = 0.0
+MAX_TOKENS = 300
+SUCCESS_SCORE_THRESHOLD = 0.1
 
 SYSTEM_PROMPT = textwrap.dedent(
     """
-    You are an expert data cleaning agent operating inside an OpenEnv environment.
-    At each step you receive an observation JSON. You must respond with a SINGLE valid JSON action.
-    Response format (strict JSON):
-    {
-      "operation": "<operation_name>",
-      "target_columns": ["col1"],
-      "params": {}
-    }
+    You are an expert data cleaning agent.
+    Each turn you receive an observation JSON describing defects in a dataset.
+    You must respond with a SINGLE valid JSON action to fix the defects.
+    
+    Valid actions:
+    - {"operation": "impute_missing", "target_columns": ["col1"], "params": {"strategy": "median"}}
+    - {"operation": "replace_sentinel", "target_columns": ["col1"], "params": {"sentinel": -1, "strategy": "median"}}
+    - {"operation": "deduplicate", "target_columns": [], "params": {"keep": "first"}}
+    - {"operation": "standardize_phone", "target_columns": ["phone"], "params": {}}
+    - {"operation": "lowercase_email", "target_columns": ["email"], "params": {}}
+    - {"operation": "clamp_range", "target_columns": ["age"], "params": {"min_val": 18, "max_val": 100}}
+    - {"operation": "export", "target_columns": [], "params": {}}
+    
+    Provide ONLY the JSON object.
     """
 ).strip()
 
-def get_rule_based_action(obs):
-    """Fallback rule-based logic if LLM fails."""
-    if obs.total_defects == 0 or obs.defect_reduction_pct >= 95.0:
-        return {"operation": "export", "target_columns": [], "params": {}}
+def log_start(task: str, env: str, model: str) -> None:
+    print(f"[START] task={task} env={env} model={model}", flush=True)
 
-    candidates = [
-        (obs.missing_count,           "impute_missing",      [],                          {"strategy": "median"}),
-        (obs.sentinel_count,          "replace_sentinel",     [],                          {"sentinel": -1, "strategy": "median"}),
-        (obs.duplicate_count,         "deduplicate",          [],                          {"keep": "first"}),
-        (obs.phone_format_errors,     "standardize_phone",    ["phone"],                   {}),
-        (obs.email_case_errors,       "lowercase_email",      ["email"],                   {}),
-        (obs.age_range_violations,    "clamp_range",          ["age"],                     {"min_val": 18, "max_val": 100}),
-    ]
-    candidates.sort(key=lambda x: x[0], reverse=True)
-    for count, op, cols, params in candidates:
-        if count > 0:
-            return {"operation": op, "target_columns": cols, "params": params}
-    return {"operation": "export", "target_columns": [], "params": {}}
+def log_step(step: int, action: str, reward: float, done: bool, error: Optional[str]) -> None:
+    error_val = error if error else "null"
+    done_val = str(done).lower()
+    print(
+        f"[STEP] step={step} action={action} reward={reward:.2f} done={done_val} error={error_val}",
+        flush=True,
+    )
 
-def get_llm_action(client, obs):
-    """Query the LLM proxy for the next action."""
+def log_end(success: bool, steps: int, score: float, rewards: List[float]) -> None:
+    rewards_str = ",".join(f"{r:.2f}" for r in rewards)
+    print(f"[END] success={str(success).lower()} steps={steps} score={score:.2f} rewards={rewards_str}", flush=True)
+
+def get_model_action(client: OpenAI, obs: Any) -> Dict[str, Any]:
+    # Simplify observation for LLM context
     obs_summary = {
         "task_id": obs.task_id,
         "step": obs.step_number,
         "total_defects": obs.total_defects,
-        "missing_count": obs.missing_count,
-        "duplicate_count": obs.duplicate_count,
-        # Add more fields if needed
+        "defect_types": {
+            "missing": obs.missing_count,
+            "sentinel": obs.sentinel_count,
+            "duplicate": obs.duplicate_count,
+            "phone_errors": obs.phone_format_errors,
+            "email_errors": obs.email_case_errors,
+            "age_errors": obs.age_range_violations
+        }
     }
     
     try:
-        response = client.chat.completions.create(
-            model="gpt-4o",  # The proxy usually handles model mapping
+        completion = client.chat.completions.create(
+            model=MODEL_NAME,
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": json.dumps(obs_summary)}
+                {"role": "user", "content": json.dumps(obs_summary)},
             ],
-            response_format={"type": "json_object"},
-            max_tokens=300,
-            temperature=0
+            temperature=TEMPERATURE,
+            max_tokens=MAX_TOKENS,
+            response_format={"type": "json_object"}
         )
-        content = response.choices[0].message.content.strip()
-        return json.loads(content)
-    except Exception as e:
-        logger.error(f"LLM Error: {e}")
-        return None
+        text = (completion.choices[0].message.content or "").strip()
+        return json.loads(text)
+    except Exception as exc:
+        # Fallback rule-based action
+        if obs.total_defects == 0:
+            return {"operation": "export", "target_columns": [], "params": {}}
+        return {"operation": "impute_missing", "target_columns": [], "params": {"strategy": "median"}}
 
-def main():
-    task_id = sys.argv[1] if len(sys.argv) > 1 else "fix_missing_price"
+async def main() -> None:
+    client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
     
-    # Initialize OpenAI client with validator's proxy settings
-    api_key = os.environ.get("API_KEY") or os.environ.get("OPENAI_API_KEY")
-    base_url = os.environ.get("API_BASE_URL")
-    
-    client = None
-    if api_key:
-        kwargs = {"api_key": api_key}
-        if base_url:
-            kwargs["base_url"] = base_url
-        client = OpenAI(**kwargs)
-    
+    # We use the local environment class as defined in this repo
+    env = DataCleaningEnv(seed=42)
+
+    history: List[str] = []
+    rewards: List[float] = []
+    steps_taken = 0
+    score = 0.0
+    success = False
+
+    log_start(task=TASK_NAME, env=BENCHMARK, model=MODEL_NAME)
+
     try:
-        env = DataCleaningEnv(seed=42)
-        obs = env.reset(task_id)
-        print(f"[START] task={task_id}", flush=True)
-        
-        # Run for up to 10 steps
-        for _ in range(10):
-            action = None
-            if client:
-                action = get_llm_action(client, obs)
-            
-            if not action:
-                action = get_rule_based_action(obs)
-                
-            obs, reward, done, info = env.step(action)
-            print(f"[STEP] step={obs.step_number} reward={reward.value}", flush=True)
-            
+        obs = env.reset(TASK_NAME)
+        limit = obs.max_steps if obs.max_steps else MAX_STEPS_DEFAULT
+        for step in range(1, limit + 1):
+            if obs.done:
+                break
+
+            action_dict = get_model_action(client, obs)
+            action_str = json.dumps(action_dict)
+
+            obs, reward_obj, done, info = env.step(action_dict)
+
+            reward = reward_obj.value
+            rewards.append(reward)
+            steps_taken = step
+            error = info.get("exec_error")
+
+            log_step(step=step, action=action_str, reward=reward, done=done, error=error)
+
             if done:
                 break
-        
-        print(f"[END] task={task_id} score={info.get('grade', 0.0)} steps={obs.step_number}", flush=True)
-        
-        result = {
-            "task_id": task_id,
-            "steps_taken": obs.step_number,
-            "grade": info.get("grade", 0.0),
-            "status": "completed"
-        }
-        print(json.dumps(result, indent=2), flush=True)
-        
+
+        score = info.get("grade", sum(rewards) / limit if limit > 0 else 0.0)
+        score = min(max(score, 0.0), 1.0)
+        success = score >= SUCCESS_SCORE_THRESHOLD
+
     except Exception as e:
-        print(json.dumps({"status": "error", "message": str(e)}))
-        sys.exit(1)
+        print(f"[DEBUG] Runtime error: {e}", flush=True)
+    finally:
+        log_end(success=success, steps=steps_taken, score=score, rewards=rewards)
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

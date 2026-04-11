@@ -240,7 +240,7 @@ class TaskConfig(BaseModel):
     excellent_threshold: float = Field(..., ge=0.0, le=1.0)
     reward_shaping: str = "dense"
     score_range: List[float] = Field(default_factory=lambda: [0.0, 1.0])
-    grader: str = ""
+    grader: bool = False
     wind: str = "None"
     assets: str = "Dataset columns"
     initial_fire: str = "None"
