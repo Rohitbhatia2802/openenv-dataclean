@@ -22,6 +22,9 @@ tasks:
     name: Fix Missing Price Values
     difficulty: easy
     description: "Impute missing and sentinel price values in the retail dataset."
+    max_steps: 20
+    pass_threshold: 0.70
+    excellent_threshold: 0.95
     grader: true
     grader_endpoint: "/grader/fix_missing_price"
 
@@ -29,6 +32,9 @@ tasks:
     name: Normalize Customer Data
     difficulty: medium
     description: "Deduplicate, standardize phone/email, and clamp age values."
+    max_steps: 35
+    pass_threshold: 0.60
+    excellent_threshold: 0.90
     grader: true
     grader_endpoint: "/grader/normalize_customer_pipeline"
 
@@ -36,6 +42,9 @@ tasks:
     name: Validate Medical Records
     difficulty: hard
     description: "Fix date-ordering, ICD-10 codes, and dosage values in EMR data."
+    max_steps: 50
+    pass_threshold: 0.55
+    excellent_threshold: 0.85
     grader: true
     grader_endpoint: "/grader/validate_medical_records"
 
