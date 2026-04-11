@@ -24,7 +24,7 @@ TASKS = {
         "max_steps": 20,
         "pass_threshold": 0.70,
         "excellent_threshold": 0.95,
-        "description": "Impute missing and sentinel price values.",
+        "description": "Impute missing and sentinel price values in the retail dataset.",
         "grader": True,
     },
     "normalize_customer_pipeline": {
@@ -44,7 +44,7 @@ TASKS = {
         "max_steps": 50,
         "pass_threshold": 0.55,
         "excellent_threshold": 0.85,
-        "description": "Fix date-ordering, ICD-10 codes, and dosage values.",
+        "description": "Fix date-ordering, ICD-10 codes, and dosage values in EMR data.",
         "grader": True,
     }
 }
